@@ -10,6 +10,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.expression.WebExpressionAuthorizationManager;
 
 @Configuration
 public class SecurityConfig {
@@ -18,10 +19,17 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity.httpBasic()
                 .and()
-                .authorizeRequests()
+                .authorizeHttpRequests()
+                //.authorizeRequests() // DEPRECATED WAY BUT LAURENTİU SPİLCA'S WAY
                 // .requestMatchers("/demo/**") DEMO UZANTILI END POİNT'E GELEN BÜTÜN REQUESTLERİ KAPSAR
-                .anyRequest()//MATCHER METHOD (BÜTÜN GELEN İSTEKLER)
-                .hasAuthority("ADMIN") //AUTHORİZATİON RULE (SADECE ADMIN OLANLAR)
+                //.anyRequest()//MATCHER METHOD (BÜTÜN GELEN İSTEKLER)
+                //.anyRequest().hasAuthority("ADMIN") AUTHORİZATİON RULE (SADECE ADMIN OLANLAR)
+                //.anyRequest().permitAll() HEPSİNE İZİN VERİR
+                //.anyRequest().denyAll() HEPSİNİ REDDEDER
+                //.anyRequest().hasRole("ADMIN") (hasAuthority() ile eşdeğerdir)
+                //.anyRequest().hasAnyRole("ADMIN","USER") ()
+
+                .anyRequest().access(new WebExpressionAuthorizationManager("isAuthenticated() and hasAuthority('ADMIN') "))//DAHA KARIŞIK LOCİGLER YAZMAK İÇİN
                 .and().build();
     }
 
@@ -29,10 +37,10 @@ public class SecurityConfig {
     public UserDetailsService userDetailsService(){
         // BELLEKTE BİR KULLANICI OLUŞTURDUM
         var uds = new InMemoryUserDetailsManager();
-        var a1 = User.withUsername("admin").password(passwordEncoder().encode("123")).authorities("ADMIN").build();
-        var u2 = User.withUsername("user").password(passwordEncoder().encode("123")).authorities("USER").build();
-        uds.createUser(a1);
-        uds.createUser(u2);
+        var admin = User.withUsername("admin").password(passwordEncoder().encode("123")).authorities("ADMIN").build();
+        var user = User.withUsername("user").password(passwordEncoder().encode("123")).authorities("USER").build();
+        uds.createUser(admin);
+        uds.createUser(user);
         return uds;
 
 
